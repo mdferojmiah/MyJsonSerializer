@@ -1,0 +1,15 @@
+[Bb]in/*
+[Oo]bj/*
+
+
+*.suo
+*.user
+*.userprefs
+*.sln.docstates
+.vscode/
+.idea/
+
+
+*.nupkg
+**/packages/*
+!**/packages/build/
