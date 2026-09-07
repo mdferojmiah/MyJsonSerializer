@@ -1,6 +1,8 @@
 using MyJsonSerializer;
 
 
+Console.WriteLine(JsonSerializer.Deserialize<bool>("false"));
+
 Console.WriteLine(JsonSerializer.Serialize(null));
 Console.WriteLine(JsonSerializer.Serialize("John"));
 Console.WriteLine(JsonSerializer.Serialize(true));
@@ -11,20 +13,26 @@ Console.WriteLine(JsonSerializer.Serialize(10.5));
 Console.WriteLine(JsonSerializer.Serialize(99.99m));
 Console.WriteLine();
 
+
+
 Console.WriteLine(JsonSerializer.Serialize("Hello \"John\""));
 Console.WriteLine(JsonSerializer.Serialize("C:\\temp\\file"));
 Console.WriteLine(JsonSerializer.Serialize("Line1\nLine2"));
 Console.WriteLine(JsonSerializer.Serialize("Tab\tseparated"));
 Console.WriteLine();
 
+
+
 Console.WriteLine(JsonSerializer.Serialize(new List<int>(){1, 2, 3}));
 Console.WriteLine(JsonSerializer.Serialize(new List<string> { "John", "Jane", "Bob" }));
+
 List<List<double>> doubles = new List<List<double>>
 {
     new List<double>{1.1, 2.5, 3.33},
     new List<double>{5.0,6.7,7.4}
 };
 Console.WriteLine(JsonSerializer.Serialize(doubles));
+
 List<User> users = new List<User> 
 { 
     new User { Id = 1, Name = "John", IsActive = true},
@@ -33,6 +41,10 @@ List<User> users = new List<User>
 Console.WriteLine(JsonSerializer.Serialize(users)); 
 Console.WriteLine();
 
+
+
+
+
 var user1 = new User
 {
     Id = 1,
@@ -40,12 +52,14 @@ var user1 = new User
     IsActive = true
 };
 Console.WriteLine(JsonSerializer.Serialize(user1));
+
 var user2 = new User
 {
     Id = 2,
     Name = "Atik",
     IsActive = true
 };
+
 var parentUser = new ParentUser
 {
     ParentId = 101,
@@ -55,6 +69,10 @@ var parentUser = new ParentUser
 Console.WriteLine(JsonSerializer.Serialize(parentUser));
 Console.WriteLine();
 
+
+
+
+
 var dict1 = new Dictionary<string, object>
 {
     ["Name"] = "John",
@@ -62,12 +80,14 @@ var dict1 = new Dictionary<string, object>
     ["IsActive"] = true
 };
 Console.WriteLine(JsonSerializer.Serialize(dict1));
+
 var dict2 = new Dictionary<string, object>
 {
     ["User"] = new User { Id = 1, Name = "John" },
     ["Active"] = true
 };
 Console.WriteLine(JsonSerializer.Serialize(dict2));
+
 var dict3 = new Dictionary<int, string>
 {
     [1] = "One",
@@ -94,3 +114,4 @@ class User
     public string? Name { get; set; }
     public bool IsActive { get; set; }
 }
+

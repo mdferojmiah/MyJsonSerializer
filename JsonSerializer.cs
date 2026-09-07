@@ -126,4 +126,14 @@ public static class JsonSerializer
         result.Append('}');
         return result.ToString();
     }
+
+
+    // Deserializer
+    public static T? Deserialize<T>(string json)
+    {
+        var parser = new JsonParser(json);
+        var result = parser.Parse();
+        
+        return (T?)result;
+    }
 }
