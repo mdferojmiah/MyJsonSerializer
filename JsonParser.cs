@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text;
+
 namespace MyJsonSerializer;
 
 public class JsonParser
@@ -32,12 +35,81 @@ public class JsonParser
         {
             // '{' => ParseObject(),
             // '[' => ParseCollection(),
-            // '"' => ParseString(),
+            '"' => ParseString(),
             'f' or 't' => ParseBoolean(),
             'n' => ParseNull(),
-            //_ when char.IsDigit(ch) || ch == '-' => PaseNumber(),
+            _ when char.IsDigit(ch) || ch == '-' => ParseNumber(),
             _ => throw new Exception($"Unexpected character at position {_position}: '{ch}'")
         };
+    }
+
+    private List<object?> ParseCollection()
+    {
+        var resultList = new List<object?>();
+        
+        return resultList;
+    }
+
+    private string ParseString()
+    {
+        StringBuilder result = new StringBuilder();
+        Expect('"');
+        while (true)
+        {
+            var ch = Next();
+            if (ch == '"')
+            {
+                return result.ToString();
+            }
+
+            if(ch == '\\')
+            {
+                var next = Next();
+                ch = next switch
+                {
+                    '"' => '"',
+                    '\\' => '\\',
+                    '/' => '/',
+                    'b' => '\b',
+                    'f' => '\f',
+                    'n' => '\n',
+                    'r' => '\r',
+                    't' => '\t',
+                    _ => throw new Exception($"Invalid escape sequence at position {_position}")
+                };
+            }
+            result.Append(ch);
+        }
+    }
+
+    private decimal ParseNumber()
+    {
+        var start = _position;
+
+        if (_json[_position] == '-') _position++;
+
+        if (_position >= _json.Length || !char.IsDigit(_json[_position]))
+            throw new Exception($"Expected digit at position {_position}");
+
+        while (_position < _json.Length && char.IsDigit(_json[_position]))
+            _position++;
+        
+        if(_position < _json.Length && _json[_position] == '.')
+        {
+            _position++;
+
+            if (_position >= _json.Length || !char.IsDigit(_json[_position]))
+                throw new Exception($"Expected digit after decimal at position {_position}");
+            
+            while (_position < _json.Length && char.IsDigit(_json[_position]))
+                _position++;
+        }
+
+        var numberString = _json.Substring(start, _position - start);
+        if (!decimal.TryParse(numberString, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal result))
+            throw new Exception($"Invalid Number format: {numberString}");
+
+        return result;
     }
 
     private bool ParseBoolean()

@@ -1,7 +1,12 @@
 using MyJsonSerializer;
 
+Console.WriteLine(JsonSerializer.Deserialize<string>(JsonSerializer.Serialize("Hello \"John\"")));
+Console.WriteLine(JsonSerializer.Deserialize<string>(JsonSerializer.Serialize("C:\\temp\\file")));
+Console.WriteLine(JsonSerializer.Deserialize<string>(JsonSerializer.Serialize("Line1\nLine2")));
+Console.WriteLine(JsonSerializer.Deserialize<string>(JsonSerializer.Serialize("Tab\tseparated")));
+Console.WriteLine();
 
-Console.WriteLine(JsonSerializer.Deserialize<bool>("false"));
+
 
 Console.WriteLine(JsonSerializer.Serialize(null));
 Console.WriteLine(JsonSerializer.Serialize("John"));
@@ -104,8 +109,8 @@ Console.WriteLine(JsonSerializer.Serialize(dict3));
 class ParentUser
 {
     public int ParentId { get; set; }
-    public string ParentName { get; set; }
-    public List<User> Users { get; set; }
+    public string? ParentName { get; set; }
+    public List<User>? Users { get; set; }
 }
 
 class User
