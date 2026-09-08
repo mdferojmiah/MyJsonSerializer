@@ -28,13 +28,12 @@ public class JsonParser
     private object? ParseValue()
     {
         SkipWhiteSpace();
-
         var ch = Peek();
 
         return ch switch
         {
-            // '{' => ParseObject(),
-            // '[' => ParseCollection(),
+            '{' => ParseObject(),
+            '[' => ParseCollection(),
             '"' => ParseString(),
             'f' or 't' => ParseBoolean(),
             'n' => ParseNull(),
@@ -43,11 +42,44 @@ public class JsonParser
         };
     }
 
+    private Dictionary<string, object> ParseObject()
+    {
+        var dictionary = new Dictionary<string, object>();
+        Expect('{');
+        while (true)
+        {
+            var key = ParseString();
+            Expect(':');
+            var value = ParseValue();
+            dictionary[key] = value!;
+
+            if(Peek() == '}')
+            {
+                _position++;
+                return dictionary;
+            }
+            Expect(',');
+        }
+    }
+
     private List<object?> ParseCollection()
     {
         var resultList = new List<object?>();
-        
-        return resultList;
+        Expect('[');
+
+        while (true)
+        {
+            SkipWhiteSpace();
+            var value = ParseValue();
+            resultList.Add(value);
+            
+            if(Peek() == ']')
+            {
+                _position++;
+                return resultList;
+            }
+            Expect(',');
+        }
     }
 
     private string ParseString()
@@ -97,7 +129,7 @@ public class JsonParser
         if(_position < _json.Length && _json[_position] == '.')
         {
             _position++;
-
+            
             if (_position >= _json.Length || !char.IsDigit(_json[_position]))
                 throw new Exception($"Expected digit after decimal at position {_position}");
             

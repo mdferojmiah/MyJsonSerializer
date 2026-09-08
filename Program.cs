@@ -1,9 +1,31 @@
 using MyJsonSerializer;
 
-Console.WriteLine(JsonSerializer.Deserialize<string>(JsonSerializer.Serialize("Hello \"John\"")));
-Console.WriteLine(JsonSerializer.Deserialize<string>(JsonSerializer.Serialize("C:\\temp\\file")));
-Console.WriteLine(JsonSerializer.Deserialize<string>(JsonSerializer.Serialize("Line1\nLine2")));
-Console.WriteLine(JsonSerializer.Deserialize<string>(JsonSerializer.Serialize("Tab\tseparated")));
+
+var user1 = new User
+{
+    Id = 1,
+    Name = "Feroj",
+    IsActive = true
+};
+var user2 = new User
+{
+    Id = 2,
+    Name = "Atik",
+    IsActive = true
+};
+var parentUser = new ParentUser
+{
+    ParentId = 101,
+    ParentName = "Zorna Begum",
+    Users = new List<User>{user1, user2}
+};
+
+var res = JsonSerializer.Deserialize<Dictionary<string, Object>>(JsonSerializer.Serialize(parentUser));
+
+foreach (var v in res)
+{
+    Console.WriteLine($"{v.Key} - {v.Value}");
+}
 Console.WriteLine();
 
 
@@ -46,31 +68,7 @@ List<User> users = new List<User>
 Console.WriteLine(JsonSerializer.Serialize(users)); 
 Console.WriteLine();
 
-
-
-
-
-var user1 = new User
-{
-    Id = 1,
-    Name = "Feroj",
-    IsActive = true
-};
 Console.WriteLine(JsonSerializer.Serialize(user1));
-
-var user2 = new User
-{
-    Id = 2,
-    Name = "Atik",
-    IsActive = true
-};
-
-var parentUser = new ParentUser
-{
-    ParentId = 101,
-    ParentName = "Zorna Begum",
-    Users = new List<User>{user1, user2}
-};
 Console.WriteLine(JsonSerializer.Serialize(parentUser));
 Console.WriteLine();
 
