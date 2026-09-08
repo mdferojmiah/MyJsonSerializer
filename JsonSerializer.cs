@@ -131,9 +131,145 @@ public static class JsonSerializer
     // Deserializer
     public static T? Deserialize<T>(string json)
     {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            throw new ArgumentException("Json can be null or empty");
+        }
+
         var parser = new JsonParser(json);
-        var result = parser.Parse();
+        var parsed = parser.Parse();
+
+        if (parsed == null && typeof(T).IsValueType)
+            throw new Exception($"Cannot deserialize null to value type '{typeof(T)}'");
+
+        if (parsed == null)
+            return default;
         
-        return (T?)result;
+        return (T?)ConvertValue(parsed, typeof(T));
+    }
+
+    private static object? ConvertValue(object? parsedValue, Type targetType)
+    {
+        if (parsedValue == null)
+            return null;
+
+        if (targetType.IsInstanceOfType(parsedValue))
+            return parsedValue;
+        
+        var underlyingType = Nullable.GetUnderlyingType(targetType);
+        if (underlyingType != null)
+        {
+            return ConvertValue(parsedValue, underlyingType);
+        }
+
+        if(targetType == typeof(string))
+        {
+            return parsedValue.ToString();
+        }
+        if(targetType == typeof(int))
+        {
+            return Convert.ToInt32(parsedValue);
+        }
+        if(targetType == typeof(long))
+        {
+            return Convert.ToInt64(parsedValue);
+        }
+        if(targetType == typeof(float))
+        {
+            return Convert.ToSingle(parsedValue);
+        }
+        if(targetType == typeof(double))
+        {
+            return Convert.ToDouble(parsedValue);
+        }
+        if(targetType == typeof(decimal))
+        {
+            return Convert.ToDecimal(parsedValue);
+        }
+        if(targetType == typeof(bool))
+        {
+            return Convert.ToBoolean(parsedValue);
+        }
+        if(targetType == typeof(DateTime))
+        {
+            return DateTime.Parse(parsedValue.ToString()!);
+        }
+        if(targetType == typeof(Guid))
+        {
+            return Guid.Parse(parsedValue.ToString()!);
+        }
+        if(targetType.IsEnum)
+        {
+            return Enum.Parse(targetType, parsedValue.ToString()!);
+        }
+
+        if(targetType.IsArray && parsedValue is List<object?> list)
+        {
+            Type elementType = targetType.GetElementType()!;
+            Array array = Array.CreateInstance(elementType, list.Count);
+            for(int i = 0; i < list.Count; i++)
+            {
+                array.SetValue(ConvertValue(list[i], elementType), i);
+            }
+            return array;
+        }
+
+        if(typeof(IList).IsAssignableFrom(targetType) && parsedValue is List<object?> list2)
+        {
+            Type elementType = targetType.GetGenericArguments()[0];
+            var listInstance = (IList)Activator.CreateInstance(targetType)!;
+            foreach (var item in list2)
+            {
+                listInstance.Add(ConvertValue(item, elementType));
+            }
+
+            return listInstance;
+        }
+
+        if(typeof(IDictionary).IsAssignableFrom(targetType) && parsedValue is Dictionary<string, object?> dictionary)
+        {
+            var keyType = targetType.GetGenericArguments()[0];
+            var valueType = targetType.GetGenericArguments()[1];
+            var dictionaryInstance = (IDictionary)Activator.CreateInstance(targetType)!;
+            foreach (var pair in dictionary)
+            {
+                object key = ConvertValue(pair.Key, keyType)!;
+                object value = ConvertValue(pair.Value, valueType)!;
+                dictionaryInstance.Add(key, value);
+            }
+
+            return dictionaryInstance;
+        }
+
+        if(parsedValue is Dictionary<string, object?> objectDictionary)
+        {
+            return PopulateObject(targetType, objectDictionary);
+        }
+
+        throw new Exception();
+    }
+
+    private static object PopulateObject(Type targetType, Dictionary<string, object?> dict)
+    {
+        var instance = Activator.CreateInstance(targetType);
+        if(instance == null)
+        {
+            throw new Exception($"Can't create instance of target type: {targetType}");
+        }
+
+        var properties = targetType.GetProperties();
+        foreach (var property in properties)
+        {
+            var key = dict.Keys.FirstOrDefault(x => 
+                string.Equals(x, property.Name, StringComparison.OrdinalIgnoreCase));
+            
+            if(key != null && dict.TryGetValue(key, out object? value))
+            {
+                var converted= ConvertValue(value, property.PropertyType);
+                property.SetValue(instance, converted);
+            }
+        }
+
+        return instance;
     }
 }

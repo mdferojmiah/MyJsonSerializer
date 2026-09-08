@@ -1,31 +1,68 @@
 using MyJsonSerializer;
 
 
-var user1 = new User
-{
-    Id = 1,
-    Name = "Feroj",
-    IsActive = true
-};
-var user2 = new User
-{
-    Id = 2,
-    Name = "Atik",
-    IsActive = true
-};
-var parentUser = new ParentUser
-{
-    ParentId = 101,
-    ParentName = "Zorna Begum",
-    Users = new List<User>{user1, user2}
-};
+string userJson = "{\"Id\":1,\"Name\":\"John\",\"IsActive\":true}";
+var user = JsonSerializer.Deserialize<User>(userJson);
+Console.WriteLine($"User: Id={user!.Id}, Name={user.Name}, Active={user.IsActive}");
 
-var res = JsonSerializer.Deserialize<Dictionary<string, Object>>(JsonSerializer.Serialize(parentUser));
 
-foreach (var v in res!)
+
+string userWithNullJson = "{\"Id\":2,\"Name\":null,\"IsActive\":false}";
+var userNull = JsonSerializer.Deserialize<User>(userWithNullJson);
+Console.WriteLine($"User with null: Id={userNull!.Id}, Name={userNull.Name ?? "null"}, Active={userNull.IsActive}");
+
+
+
+string parentJson = @"{
+    ""ParentId"": 100,
+    ""ParentName"": ""Parent 1"",
+    ""Users"": [
+        { ""Id"": 1, ""Name"": ""John"", ""IsActive"": true },
+        { ""Id"": 2, ""Name"": ""Jane"", ""IsActive"": false },
+        { ""Id"": 3, ""Name"": ""Bob"", ""IsActive"": true }
+    ]
+}";
+
+
+
+var parent = JsonSerializer.Deserialize<ParentUser>(parentJson);
+Console.WriteLine($"Parent: Id={parent!.ParentId}, Name={parent.ParentName}");
+if (parent.Users != null)
 {
-    Console.WriteLine($"{v.Key} - {v.Value}");
+    Console.WriteLine($"Number of users: {parent.Users.Count}");
+    foreach (var u in parent.Users)
+    {
+        Console.WriteLine($"  - User: Id={u.Id}, Name={u.Name}, Active={u.IsActive}");
+    }
 }
+
+
+
+string parentEmptyJson = @"{
+    ""ParentId"": 101,
+    ""ParentName"": ""Parent 2"",
+    ""Users"": []
+}";
+
+
+
+var parentEmpty = JsonSerializer.Deserialize<ParentUser>(parentEmptyJson);
+Console.WriteLine($"Parent empty: Id={parentEmpty!.ParentId}, Name={parentEmpty.ParentName}");
+Console.WriteLine($"Users count: {parentEmpty.Users?.Count ?? 0}");
+
+
+
+string parentNullJson = @"{
+    ""ParentId"": 102,
+    ""ParentName"": ""Parent 3"",
+    ""Users"": null
+}";
+
+
+
+var parentNull = JsonSerializer.Deserialize<ParentUser>(parentNullJson);
+Console.WriteLine($"Parent null: Id={parentNull!.ParentId}, Name={parentNull.ParentName}");
+Console.WriteLine($"Users is null: {parentNull.Users == null}");
 Console.WriteLine();
 
 
@@ -68,6 +105,28 @@ List<User> users = new List<User>
 Console.WriteLine(JsonSerializer.Serialize(users)); 
 Console.WriteLine();
 
+
+
+
+
+var user1 = new User
+{
+    Id = 1,
+    Name = "Feroj",
+    IsActive = true
+};
+var user2 = new User
+{
+    Id = 2,
+    Name = "Atik",
+    IsActive = true
+};
+var parentUser = new ParentUser
+{
+    ParentId = 101,
+    ParentName = "Zorna Begum",
+    Users = new List<User>{user1, user2}
+};
 Console.WriteLine(JsonSerializer.Serialize(user1));
 Console.WriteLine(JsonSerializer.Serialize(parentUser));
 Console.WriteLine();

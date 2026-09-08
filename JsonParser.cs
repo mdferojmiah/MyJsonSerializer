@@ -49,6 +49,11 @@ public class JsonParser
         while (true)
         {
             SkipWhiteSpace();
+            if (Peek() == '}')
+            {
+                _position++;
+                return dictionary;
+            }
             var key = ParseString();
 
             SkipWhiteSpace();
@@ -82,6 +87,11 @@ public class JsonParser
         while (true)
         {
             SkipWhiteSpace();
+            if (Peek() == ']')
+            {
+                _position++;
+                return resultList;
+            }
             var value = ParseValue();
             resultList.Add(value);
             SkipWhiteSpace();
