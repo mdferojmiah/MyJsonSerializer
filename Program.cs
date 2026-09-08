@@ -22,7 +22,7 @@ var parentUser = new ParentUser
 
 var res = JsonSerializer.Deserialize<Dictionary<string, Object>>(JsonSerializer.Serialize(parentUser));
 
-foreach (var v in res)
+foreach (var v in res!)
 {
     Console.WriteLine($"{v.Key} - {v.Value}");
 }

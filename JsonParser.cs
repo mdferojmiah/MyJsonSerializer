@@ -48,17 +48,29 @@ public class JsonParser
         Expect('{');
         while (true)
         {
+            SkipWhiteSpace();
             var key = ParseString();
+
+            SkipWhiteSpace();
             Expect(':');
+            SkipWhiteSpace();
+
             var value = ParseValue();
             dictionary[key] = value!;
+            SkipWhiteSpace();
 
-            if(Peek() == '}')
+            var ch = Peek();
+            if(ch == '}')
             {
                 _position++;
                 return dictionary;
+            }else if(ch == ',')
+            {
+                Expect(',');
+            }else
+            {
+                throw new Exception($"Expected '}}' or ',' but reveived '{ch}'");
             }
-            Expect(',');
         }
     }
 
@@ -72,13 +84,21 @@ public class JsonParser
             SkipWhiteSpace();
             var value = ParseValue();
             resultList.Add(value);
-            
-            if(Peek() == ']')
+            SkipWhiteSpace();
+
+            var ch = Peek();
+            if(ch == ']')
             {
                 _position++;
                 return resultList;
+            }else if (ch == ',')
+            {
+                Expect(',');
             }
-            Expect(',');
+            else
+            {
+                throw new Exception($"Expected ']' or ',' but reveived '{ch}'");
+            }
         }
     }
 
@@ -129,7 +149,7 @@ public class JsonParser
         if(_position < _json.Length && _json[_position] == '.')
         {
             _position++;
-            
+
             if (_position >= _json.Length || !char.IsDigit(_json[_position]))
                 throw new Exception($"Expected digit after decimal at position {_position}");
             
@@ -151,6 +171,7 @@ public class JsonParser
             _position += 5;
             return false;
         }
+
         if(_position + 4 <= _json.Length && _json.Substring(_position, 4) == "true")
         {
             _position += 4;
