@@ -6,13 +6,38 @@ namespace MyJsonSerializer;
 
 public static class JsonSerializer
 {
+    [ThreadStatic]
+    private static HashSet<object>? _serializedObjects;
+    private static HashSet<object> SerializedObjects
+    {
+        get
+        {
+            _serializedObjects ??= new HashSet<object>();
+            return _serializedObjects;
+        }
+    }
+
     public static string Serialize(object? obj)
     {
-        if(obj == null)
-        {
-            return "null";
-        }
+        if (obj == null) return "null";
 
+        if (SerializedObjects.Contains(obj))
+            throw new InvalidOperationException(
+                $"Circular reference detected for type '{obj.GetType().Name}'");
+
+        SerializedObjects.Add(obj);
+
+        try
+        {
+            return SerializeInternal(obj);
+        }
+        finally
+        {
+            SerializedObjects.Remove(obj);
+        }
+    }
+    private static string SerializeInternal(object obj)
+    {
         var type = obj.GetType();
 
         if (type == typeof(string))

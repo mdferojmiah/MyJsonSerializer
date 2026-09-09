@@ -1,6 +1,12 @@
 using MyJsonSerializer;
 
 
+
+// var person = new Person { Name = "Feroj" };
+// person.Friend = person;
+// Console.WriteLine(JsonSerializer.Serialize(person));
+
+
 string userJson = "{\"Id\":1,\"Name\":\"John\",\"IsActive\":true}";
 var user = JsonSerializer.Deserialize<User>(userJson);
 Console.WriteLine($"User: Id={user!.Id}, Name={user.Name}, Active={user.IsActive}");
@@ -177,3 +183,8 @@ class User
     public bool IsActive { get; set; }
 }
 
+class Person
+{
+    public string? Name { get; set; }
+    public Person? Friend { get; set; }
+}
