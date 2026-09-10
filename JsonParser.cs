@@ -137,11 +137,26 @@ public class JsonParser
                     'n' => '\n',
                     'r' => '\r',
                     't' => '\t',
+                    'u' => ParseUnicodeEscape(),
                     _ => throw new Exception($"Invalid escape sequence at position '{_position}'")
                 };
             }
             result.Append(ch);
         }
+    }
+
+    private char ParseUnicodeEscape()
+    {
+        if (_position + 4 > _json.Length)
+            throw new Exception($"Incomplete unicode escape at position '{_position}'");
+        
+
+        var hex = _json.Substring(_position, 4);
+        if (!ushort.TryParse(hex, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out ushort code))
+            throw new Exception($"Invalid unicode escape '\\u{hex}' at position '{_position}'");
+
+        _position += 4;
+        return (char)code;
     }
 
     private decimal ParseNumber()
@@ -163,6 +178,20 @@ public class JsonParser
             if (_position >= _json.Length || !char.IsDigit(_json[_position]))
                 throw new Exception($"Expected digit after decimal at position '{_position}'");
             
+            while (_position < _json.Length && char.IsDigit(_json[_position]))
+                _position++;
+        }
+
+        if (_position < _json.Length && (_json[_position] == 'e' || _json[_position] == 'E'))
+        {
+            _position++;
+
+            if (_position < _json.Length && (_json[_position] == '+' || _json[_position] == '-'))
+                _position++;
+
+            if (_position >= _json.Length || !char.IsDigit(_json[_position]))
+                throw new Exception($"Expected digit in exponent at position '{_position}'");
+
             while (_position < _json.Length && char.IsDigit(_json[_position]))
                 _position++;
         }
