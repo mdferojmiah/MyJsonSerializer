@@ -43,42 +43,20 @@ public static class JsonSerializer
     {
         var type = obj.GetType();
 
-        if (type == typeof(string))
+        var meta = MetadataCache.Get(type);
+
+        return meta.Kind switch
         {
-            return EscapeString(Convert.ToString(obj));   
-        }
-        else if (type == typeof(bool))
-        {
-            return obj.ToString()!.ToLowerInvariant();
-        }
-        else if (type == typeof(int) || type == typeof(long) || type == typeof(float) || type == typeof(double) || type == typeof(decimal))
-        {
-            return ((IFormattable)obj).ToString(null, CultureInfo.InvariantCulture);
-        }
-        else if (type == typeof(DateTime))
-        {
-            return EscapeString(((DateTime)obj).ToString("O", CultureInfo.InvariantCulture));
-        }
-        else if (type == typeof(Guid))
-        {
-            return EscapeString(obj.ToString()!);
-        }
-        else if (type.IsEnum)
-        {
-            return EscapeString(obj.ToString()!);
-        }
-        else if (typeof(IDictionary).IsAssignableFrom(type))
-        {
-            return SerializeDictionary(obj);
-        }
-        else if (type != typeof(string) && typeof(IEnumerable).IsAssignableFrom(type))
-        {
-            return SerializeCollection(obj);
-        }
-        else
-        {
-            return SerializeObject(obj);
-        }
+            TypeKind.String => EscapeString((string)obj),
+            TypeKind.Boolean => (bool)obj ? "true" : "false",
+            TypeKind.Number => ((IFormattable)obj).ToString(null, CultureInfo.InvariantCulture),
+            TypeKind.DateTime => EscapeString(((DateTime)obj).ToString("O", CultureInfo.InvariantCulture)),
+            TypeKind.Guid => EscapeString(obj.ToString()),
+            TypeKind.Enum => EscapeString(obj.ToString()),
+            TypeKind.Dictionary => SerializeDictionary(obj),
+            TypeKind.Collection => SerializeCollection(obj),
+            _ => SerializeObject(obj)
+        };
     }
 
     private static string EscapeString(string? input)
@@ -93,6 +71,10 @@ public static class JsonSerializer
             else if (ch == '\n') result.Append("\\n");
             else if (ch == '\t') result.Append("\\t");
             else if (ch == '\r') result.Append("\\r");
+            else if (ch < 0x20)
+            {
+                result.Append("\\u").Append(((int)ch).ToString("x4", CultureInfo.InvariantCulture));
+            }
             else
             {
                 result.Append(ch);
@@ -109,15 +91,16 @@ public static class JsonSerializer
         json.Append('{');
 
         var type = obj.GetType();
-        var properties = type.GetProperties();
+        var properties = MetadataCache.Get(type).Properties;
 
         for (int i = 0; i < properties.Length; i++)
         {
-            var propertyKey = $"\"{properties[i].Name}\"";
-            json.Append(propertyKey);
-            json.Append(':');
-            var propertyValue = Serialize(properties[i].GetValue(obj));
+            //var propertyKey = $"\"{properties[i].Name}\"";
+            json.Append(properties[i].NameToken).Append(':');
+
+            var propertyValue = Serialize(properties[i].Property.GetValue(obj));
             json.Append(propertyValue);
+
             if (i < properties.Length - 1) json.Append(',');
         }
 
@@ -155,9 +138,8 @@ public static class JsonSerializer
         foreach (var k in keys)
         {
             if (!first) result.Append(',');
-            var key = $"\"{k}\"";
-            result.Append(key);
-            result.Append(':');
+            var key = EscapeString(k.ToString()); 
+            result.Append(key).Append(':');
             var value = Serialize(dictionary[k]);
             result.Append(value);
             first = false;
@@ -197,11 +179,11 @@ public static class JsonSerializer
 
         if (targetType.IsInstanceOfType(parsedValue))
             return parsedValue;
-        
-        var underlyingType = Nullable.GetUnderlyingType(targetType);
-        if (underlyingType != null)
+
+        var meta = MetadataCache.Get(targetType);
+        if (meta.NullableUnderlyingType != null)
         {
-            return ConvertValue(parsedValue, underlyingType);
+            return ConvertValue(parsedValue, meta.NullableUnderlyingType);
         }
 
         if(targetType == typeof(string))
@@ -247,7 +229,7 @@ public static class JsonSerializer
 
         if(targetType.IsArray && parsedValue is List<object?> list)
         {
-            Type elementType = targetType.GetElementType()!;
+            Type elementType = meta.ElementType!;
             Array array = Array.CreateInstance(elementType, list.Count);
             for(int i = 0; i < list.Count; i++)
             {
@@ -258,7 +240,7 @@ public static class JsonSerializer
 
         if(typeof(IList).IsAssignableFrom(targetType) && parsedValue is List<object?> list2)
         {
-            Type elementType = targetType.GetGenericArguments()[0];
+            Type elementType = meta.GenericArguments[0];
             var listInstance = (IList)Activator.CreateInstance(targetType)!;
             foreach (var item in list2)
             {
@@ -270,8 +252,8 @@ public static class JsonSerializer
 
         if(typeof(IDictionary).IsAssignableFrom(targetType) && parsedValue is Dictionary<string, object?> dictionary)
         {
-            var keyType = targetType.GetGenericArguments()[0];
-            var valueType = targetType.GetGenericArguments()[1];
+            var keyType = meta.GenericArguments[0];
+            var valueType = meta.GenericArguments[1];
             var dictionaryInstance = (IDictionary)Activator.CreateInstance(targetType)!;
             foreach (var pair in dictionary)
             {
@@ -293,23 +275,27 @@ public static class JsonSerializer
 
     private static object PopulateObject(Type targetType, Dictionary<string, object?> dict)
     {
+        var meta = MetadataCache.Get(targetType);
+
         var instance = Activator.CreateInstance(targetType);
         if(instance == null)
         {
             throw new Exception($"Can't create instance of target type '{targetType}'");
         }
 
-        var properties = targetType.GetProperties();
-        foreach (var property in properties)
+        foreach (var pair in dict)
         {
-            var key = dict.Keys.FirstOrDefault(x => 
-                string.Equals(x, property.Name, StringComparison.OrdinalIgnoreCase));
-            
-            if(key != null && dict.TryGetValue(key, out object? value))
+            if(!meta.PropertiesByName.TryGetValue(pair.Key, out var property))
             {
-                var converted= ConvertValue(value, property.PropertyType);
-                property.SetValue(instance, converted);
+                continue;
             }
+            if (!property.Property.CanWrite)
+            {
+                continue;
+            }
+            
+            var converted= ConvertValue(pair.Value, property.PropertyType);
+            property.Property.SetValue(instance, converted);
         }
 
         return instance;
