@@ -20,7 +20,7 @@ public class JsonParser
         SkipWhiteSpace();
 
         if (_position < _json.Length)
-            throw new Exception($"Unexpected character at position {_position}");
+            throw new Exception($"Unexpected character at position '{_position}'");
 
         return result;
     }
@@ -38,7 +38,7 @@ public class JsonParser
             'f' or 't' => ParseBoolean(),
             'n' => ParseNull(),
             _ when char.IsDigit(ch) || ch == '-' => ParseNumber(),
-            _ => throw new Exception($"Unexpected character at position {_position}: '{ch}'")
+            _ => throw new Exception($"Unexpected character at position '{_position}': '{ch}'")
         };
     }
 
@@ -137,7 +137,7 @@ public class JsonParser
                     'n' => '\n',
                     'r' => '\r',
                     't' => '\t',
-                    _ => throw new Exception($"Invalid escape sequence at position {_position}")
+                    _ => throw new Exception($"Invalid escape sequence at position '{_position}'")
                 };
             }
             result.Append(ch);
@@ -151,7 +151,7 @@ public class JsonParser
         if (_json[_position] == '-') _position++;
 
         if (_position >= _json.Length || !char.IsDigit(_json[_position]))
-            throw new Exception($"Expected digit at position {_position}");
+            throw new Exception($"Expected digit at position '{_position}'");
 
         while (_position < _json.Length && char.IsDigit(_json[_position]))
             _position++;
@@ -161,7 +161,7 @@ public class JsonParser
             _position++;
 
             if (_position >= _json.Length || !char.IsDigit(_json[_position]))
-                throw new Exception($"Expected digit after decimal at position {_position}");
+                throw new Exception($"Expected digit after decimal at position '{_position}'");
             
             while (_position < _json.Length && char.IsDigit(_json[_position]))
                 _position++;
@@ -169,7 +169,7 @@ public class JsonParser
 
         var numberString = _json.Substring(start, _position - start);
         if (!decimal.TryParse(numberString, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal result))
-            throw new Exception($"Invalid Number format: {numberString}");
+            throw new Exception($"Invalid Number format: '{numberString}'");
 
         return result;
     }
@@ -188,7 +188,7 @@ public class JsonParser
             return true;
         }
 
-        throw new Exception($"Expect 'true' or 'false' at positon {_position}");
+        throw new Exception($"Expect 'true' or 'false' at positon '{_position}'");
     }
 
     private object? ParseNull()
@@ -199,7 +199,7 @@ public class JsonParser
             return null;
         }
         
-        throw new Exception($"Expected 'null' at position {_position}");
+        throw new Exception($"Expected 'null' at position '{_position}'");
     }
 
 
@@ -212,10 +212,10 @@ public class JsonParser
         SkipWhiteSpace();
 
         if (_position >= _json.Length)
-            throw new Exception($"Expected {ch} but reached end of input!");
+            throw new Exception($"Expected '{ch}' but reached end of input!");
 
         if (_json[_position] != ch)
-            throw new Exception($"Expected {ch} but got {_json[_position]} at postion {_position}");
+            throw new Exception($"Expected '{ch}' but got '{_json[_position]}' at postion '{_position}'");
         
         _position++;
     }

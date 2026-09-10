@@ -17,6 +17,8 @@ public static class JsonSerializer
         }
     }
 
+    
+    #region Serializer
     public static string Serialize(object? obj)
     {
         if (obj == null) return "null";
@@ -36,6 +38,7 @@ public static class JsonSerializer
             SerializedObjects.Remove(obj);
         }
     }
+    
     private static string SerializeInternal(object obj)
     {
         var type = obj.GetType();
@@ -51,6 +54,18 @@ public static class JsonSerializer
         else if (type == typeof(int) || type == typeof(long) || type == typeof(float) || type == typeof(double) || type == typeof(decimal))
         {
             return ((IFormattable)obj).ToString(null, CultureInfo.InvariantCulture);
+        }
+        else if (type == typeof(DateTime))
+        {
+            return EscapeString(((DateTime)obj).ToString("O", CultureInfo.InvariantCulture));
+        }
+        else if (type == typeof(Guid))
+        {
+            return EscapeString(obj.ToString()!);
+        }
+        else if (type.IsEnum)
+        {
+            return EscapeString(obj.ToString()!);
         }
         else if (typeof(IDictionary).IsAssignableFrom(type))
         {
@@ -151,21 +166,23 @@ public static class JsonSerializer
         result.Append('}');
         return result.ToString();
     }
+    #endregion
 
 
-    // Deserializer
+    #region Deserializer
     public static T? Deserialize<T>(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
-            throw new ArgumentException("Json can be null or empty");
+            throw new ArgumentException("Json can not be null or empty");
         }
 
         var parser = new JsonParser(json);
         var parsed = parser.Parse();
 
-        if (parsed == null && typeof(T).IsValueType)
-            throw new Exception($"Cannot deserialize null to value type '{typeof(T)}'");
+        var underlyingType = Nullable.GetUnderlyingType(typeof(T));
+        if (parsed == null && typeof(T).IsValueType && underlyingType == null)
+            throw new Exception($"Can not deserialize null to value type '{typeof(T)}'");
 
         if (parsed == null)
             return default;
@@ -271,7 +288,7 @@ public static class JsonSerializer
             return PopulateObject(targetType, objectDictionary);
         }
 
-        throw new Exception();
+        throw new Exception($"Cannot convert value of type '{parsedValue.GetType()}' to '{targetType}'");
     }
 
     private static object PopulateObject(Type targetType, Dictionary<string, object?> dict)
@@ -279,7 +296,7 @@ public static class JsonSerializer
         var instance = Activator.CreateInstance(targetType);
         if(instance == null)
         {
-            throw new Exception($"Can't create instance of target type: {targetType}");
+            throw new Exception($"Can't create instance of target type '{targetType}'");
         }
 
         var properties = targetType.GetProperties();
@@ -297,4 +314,5 @@ public static class JsonSerializer
 
         return instance;
     }
+    #endregion
 }
