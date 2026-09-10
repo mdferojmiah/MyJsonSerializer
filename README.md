@@ -21,7 +21,7 @@ Malformed JSON throws an exception with a descriptive message and character posi
 
 ## Testing
 
-`Test.cs`, run from `Program.cs`, provides manual verification output (not an automated assert-based suite):
+`Test.cs`, run from `Program.cs`, provides manual verification output:
 - `Test.RunFunctionalityTest()`: exercises every supported type, collections, dictionaries, nesting, edge cases, and circular references, printing input/output for inspection.
 - `Test.RunPerformanceTest()`: runs the benchmarks behind `Performance.md`.
 

@@ -234,8 +234,18 @@ public class JsonParser
 
 
     // helper methods
-    private char Peek() => _json[_position];
-    private char Next() => _json[_position++];
+    private char Peek()
+    {
+        if (_position >= _json.Length)
+            throw new Exception($"Unexpected end of input at position '{_position}'");
+        return _json[_position];
+    }
+    private char Next()
+    {
+        if (_position >= _json.Length)
+            throw new Exception($"Unexpected end of input at position '{_position}'");
+        return _json[_position++];
+    }
     private void Expect(char ch)
     {
         SkipWhiteSpace();
