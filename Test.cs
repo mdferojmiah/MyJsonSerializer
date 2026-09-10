@@ -430,13 +430,13 @@ public static class Test
         Console.WriteLine($"    Serialized Company (length: {json.Length} chars)");
         var deserializedCompany = JsonSerializer.Deserialize<Company>(json);
         Console.WriteLine($"    Deserialized: {deserializedCompany?.Name}, " +
-                         $"Departments: {deserializedCompany?.Departments?.Count}");
+                         $"Departments: {deserializedCompany?.Departments.Count}");
         if (deserializedCompany?.Departments != null)
         {
             foreach (var dept in deserializedCompany.Departments)
             {
-                Console.WriteLine($"      Dept: {dept.Name}, Manager: {dept.Manager?.Name}, " +
-                                 $"Employees: {dept.Employees?.Count}");
+                Console.WriteLine($"      Dept: {dept.Name}, Manager: {dept.Manager.Name}, " +
+                                 $"Employees: {dept.Employees.Count}");
             }
         }
     }
